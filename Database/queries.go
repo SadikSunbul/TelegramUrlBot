@@ -2,17 +2,19 @@ package Database
 
 import (
 	"context"
+
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func (db *DataBase) Get(col, id string) (interface{}, error) {
+func (db *DataBase) Get(col, id string) (*mongo.SingleResult, error) {
 	objectID, err := primitive.ObjectIDFromHex(id)
 	if err != nil {
 		return nil, err
 	}
 
-	result := db.Client.Collection(col).FindOne(context.TODO(), bson.D{{"id", objectID}})
+	result := db.Client.Collection(col).FindOne(context.TODO(), bson.D{{"_id", objectID}})
 
 	if result.Err() != nil {
 		return nil, result.Err()
@@ -21,7 +23,7 @@ func (db *DataBase) Get(col, id string) (interface{}, error) {
 	return result, nil
 }
 
-func (db *DataBase) GetBy(col string, data interface{}) (interface{}, error) {
+func (db *DataBase) GetBy(col string, data interface{}) (*mongo.SingleResult, error) {
 
 	result := db.Client.Collection(col).FindOne(context.TODO(), data)
 
@@ -32,16 +34,12 @@ func (db *DataBase) GetBy(col string, data interface{}) (interface{}, error) {
 	return result, nil
 }
 
-func (db *DataBase) GetList(col string, data interface{}) (interface{}, error) {
+func (db *DataBase) GetList(col string, data interface{}) (*mongo.Cursor, error) {
 
 	result, err := db.Client.Collection(col).Find(context.TODO(), bson.D{{"$set", data}})
 	if err != nil {
 		return nil, err
 	}
-	var response interface{}
-	err = result.Decode(response)
-	if err != nil {
-		return nil, err
-	}
+
 	return result, nil
 }

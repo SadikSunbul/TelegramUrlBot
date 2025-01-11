@@ -43,7 +43,7 @@ func handleUpdate(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database.Dat
 	case "/help":
 		handlers.HandleHelp(bot, update.Message)
 	case "/start":
-		handlers.HandleStart(bot, update.Message, userData)
+		handlers.HandleStart(bot, update.Message, db)
 	default:
 		ProcessUserInput(update, bot, db) // Kullanıcıdan gelen mesajı işle
 	}

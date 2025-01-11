@@ -12,6 +12,10 @@ type DataBase struct {
 	Client *mongo.Database
 }
 
+const (
+	User string = "users"
+)
+
 func ConnectionDatabase() *DataBase {
 	config := config.GetConfig()
 	client, err := mongo.Connect(context.TODO(), options.Client().
