@@ -14,8 +14,9 @@ func TestLoadConfig(t *testing.T) {
 	// defer os.Remove("configtest.yaml") // Test sonunda dosyayı sil
 
 	// Örnek içerik yaz
-	file.WriteString("mongoDbConnect:mongodb://localhost:27017\n")
-	file.WriteString("bootIdTelegram:your-telegram-bot-token\n")
+	file.WriteString("mongoDbConnect: \"mongodb://localhost:27017\"\n")
+	file.WriteString("bootIdTelegram: \"your-telegram-bot-token\"\n")
+	file.WriteString("dbName: \"telegram\"")
 	file.Close()
 
 	// Yapılandırmayı yükle
@@ -27,6 +28,9 @@ func TestLoadConfig(t *testing.T) {
 	}
 	if cfg.BootIdTelegram != "your-telegram-bot-token" {
 		t.Errorf("Expected bootIdTelegram to be 'your-telegram-bot-token', got '%s'", cfg.BootIdTelegram)
+	}
+	if cfg.DbName != "telegram" {
+		t.Errorf("Expected dbName to be 'telegram', got '%s'", cfg.DbName)
 	}
 }
 

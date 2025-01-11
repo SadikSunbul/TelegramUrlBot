@@ -1,6 +1,7 @@
 package Telegram
 
 import (
+	"github.com/SadikSunbul/TelegramUrlBot/Database"
 	"log"
 
 	"github.com/SadikSunbul/TelegramUrlBot/Telegram/handlers"
@@ -11,7 +12,7 @@ import (
 
 var userData = make(map[int64]map[string]string)
 
-func ConnectTelegram() {
+func ConnectTelegram(db *Database.DataBase) {
 	config := *config.GetConfig()
 
 	bot, err := tgbotapi.NewBotAPI(config.BootIdTelegram)
@@ -28,11 +29,11 @@ func ConnectTelegram() {
 		log.Fatalf("Error getting updates: %v", err)
 	}
 	for update := range updates {
-		go handleUpdate(update, bot)
+		go handleUpdate(update, bot, db)
 	}
 }
 
-func handleUpdate(update tgbotapi.Update, bot *tgbotapi.BotAPI) {
+func handleUpdate(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database.DataBase) {
 
 	if update.Message == nil {
 		return
@@ -44,6 +45,6 @@ func handleUpdate(update tgbotapi.Update, bot *tgbotapi.BotAPI) {
 	case "/start":
 		handlers.HandleStart(bot, update.Message, userData)
 	default:
-		ProcessUserInput(update, bot) // Kullanıcıdan gelen mesajı işle
+		ProcessUserInput(update, bot, db) // Kullanıcıdan gelen mesajı işle
 	}
 }
