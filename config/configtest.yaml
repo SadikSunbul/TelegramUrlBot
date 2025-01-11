@@ -1,0 +1,2 @@
+mongoDbConnect=mongodb://localhost:27017
+bootIdTelegram=your-telegram-bot-token

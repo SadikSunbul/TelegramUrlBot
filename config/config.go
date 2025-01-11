@@ -24,11 +24,11 @@ var (
 	cfg Schema
 )
 
-func LoadConfig() *Schema {
+func LoadConfig(configname string) *Schema {
 	_, filename, _, _ := runtime.Caller(0)
 	currentDir := filepath.Dir(filename)
 
-	err := godotenv.Load(filepath.Join(currentDir, "config.yaml"))
+	err := godotenv.Load(filepath.Join(currentDir, configname))
 
 	if err != nil {
 		log.Printf("Error on load configuration file, error: %v", err)

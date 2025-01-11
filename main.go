@@ -6,6 +6,6 @@ import (
 )
 
 func main() {
-	config.LoadConfig()
+	config.LoadConfig("config.yaml")
 	Telegram.ConnectTelegram()
 }
