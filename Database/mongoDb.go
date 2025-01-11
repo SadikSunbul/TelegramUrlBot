@@ -18,5 +18,5 @@ func ConnectionDatabase() *DataBase {
 	if err != nil {
 		panic(err)
 	}
-	return &DataBase{Client: client.Database("tasks")}
+	return &DataBase{Client: client.Database(config.DbName)}
 }
