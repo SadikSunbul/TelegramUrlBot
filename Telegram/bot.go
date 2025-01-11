@@ -2,9 +2,9 @@ package Telegram
 
 import (
 	"github.com/SadikSunbul/TelegramUrlBot/Database"
+	"github.com/SadikSunbul/TelegramUrlBot/Telegram/handlers"
 	"log"
 
-	"github.com/SadikSunbul/TelegramUrlBot/Telegram/handlers"
 	"github.com/SadikSunbul/TelegramUrlBot/config"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
