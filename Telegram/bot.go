@@ -10,8 +10,6 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-var userData = make(map[int64]map[string]string)
-
 func ConnectTelegram(db *Database.DataBase) {
 	config := *config.GetConfig()
 
@@ -44,6 +42,9 @@ func handleUpdate(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database.Dat
 		handlers.HandleHelp(bot, update.Message)
 	case "/start":
 		handlers.HandleStart(bot, update.Message, db)
+	case "/shortenurl":
+		handlers.HandleShortenUrl(bot, update.Message, db)
+
 	default:
 		ProcessUserInput(update, bot, db) // Kullanıcıdan gelen mesajı işle
 	}

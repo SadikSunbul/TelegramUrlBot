@@ -13,7 +13,9 @@ type DataBase struct {
 }
 
 const (
-	User string = "users"
+	User   string = "users"
+	Url    string = "urls"
+	UrlIfo string = "url_infos"
 )
 
 func ConnectionDatabase() *DataBase {
