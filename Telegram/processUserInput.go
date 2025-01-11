@@ -1,8 +1,11 @@
 package Telegram
 
-import tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+import (
+	"github.com/SadikSunbul/TelegramUrlBot/Database"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+)
 
-func ProcessUserInput(update tgbotapi.Update, bot *tgbotapi.BotAPI) {
+func ProcessUserInput(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database.DataBase) {
 	chatID := update.Message.Chat.ID
 
 	// Kullanıcının adımını kontrol et
