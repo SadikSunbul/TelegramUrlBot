@@ -21,9 +21,16 @@ func ProcessUserInput(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database
 	if data, ok := handlers.UserData[chatID]; ok {
 		switch data["step"] {
 		case "get_url":
-			// Kullanıcının girdiği URL'yi al
 			handlers.UserData[chatID]["originalUrl"] = update.Message.Text
-			bot.Send(tgbotapi.NewMessage(chatID, "Otomatik bir ad atansın mı? (evet/hayır)"))
+			msg := tgbotapi.NewMessage(chatID, "Otomatik bir ad atansın mı?")
+			keyboard := tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("✅ Evet", "auto_name:yes"),
+					tgbotapi.NewInlineKeyboardButtonData("❌ Hayır", "auto_name:no"),
+				),
+			)
+			msg.ReplyMarkup = keyboard
+			bot.Send(msg)
 			handlers.UserData[chatID]["step"] = "ask_auto_name"
 
 		case "ask_auto_name":
@@ -45,10 +52,18 @@ func ProcessUserInput(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database
 
 				handlers.UserData[chatID]["shortUrl"] = shortUrl
 				bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Kısa URL'niz: %s", shortUrl)))
-				bot.Send(tgbotapi.NewMessage(chatID, "Zamanlı mı yoksa zamansız mı olsun? (zamanlı/zamansız)"))
+				msg := tgbotapi.NewMessage(chatID, "Zamanlı mı yoksa zamansız mı olsun?")
+				keyboard := tgbotapi.NewInlineKeyboardMarkup(
+					tgbotapi.NewInlineKeyboardRow(
+						tgbotapi.NewInlineKeyboardButtonData("⏱️ Zamanlı", "time_limit:timed"),
+						tgbotapi.NewInlineKeyboardButtonData("♾️ Zamansız", "time_limit:unlimited"),
+					),
+				)
+				msg.ReplyMarkup = keyboard
+				bot.Send(msg)
 				handlers.UserData[chatID]["step"] = "ask_time_limit"
 			} else {
-				bot.Send(tgbotapi.NewMessage(chatID, "Kısa URL'nizi giriniz (sadeceşu kısmı girin xyz.com/'burayı'):"))
+				bot.Send(tgbotapi.NewMessage(chatID, "Kısa URL'nizi giriniz (sadeceşu kısmı girin ....com/'burayı'):"))
 				handlers.UserData[chatID]["step"] = "get_custom_short_url"
 			}
 
@@ -65,7 +80,15 @@ func ProcessUserInput(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database
 				return
 			}
 			handlers.UserData[chatID]["shortUrl"] = shortUrl
-			bot.Send(tgbotapi.NewMessage(chatID, "Zamanlı mı yoksa zamansız mı olsun? (zamanlı/zamansız)"))
+			msg := tgbotapi.NewMessage(chatID, "Zamanlı mı yoksa zamansız mı olsun?")
+			keyboard := tgbotapi.NewInlineKeyboardMarkup(
+				tgbotapi.NewInlineKeyboardRow(
+					tgbotapi.NewInlineKeyboardButtonData("⏱️ Zamanlı", "time_limit:timed"),
+					tgbotapi.NewInlineKeyboardButtonData("♾️ Zamansız", "time_limit:unlimited"),
+				),
+			)
+			msg.ReplyMarkup = keyboard
+			bot.Send(msg)
 			handlers.UserData[chatID]["step"] = "ask_time_limit"
 
 		case "ask_time_limit":
