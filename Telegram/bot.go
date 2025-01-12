@@ -44,6 +44,10 @@ func handleUpdate(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database.Dat
 		handlers.HandleStart(bot, update.Message, db)
 	case "/shortenurl":
 		handlers.HandleShortenUrl(bot, update.Message, db)
+	case "/mylinksactive":
+		handlers.HandleMyLinks(bot, update.Message, db, true)
+	case "/mylinkspassive":
+		handlers.HandleMyLinks(bot, update.Message, db, false)
 
 	default:
 		ProcessUserInput(update, bot, db) // Kullanıcıdan gelen mesajı işle

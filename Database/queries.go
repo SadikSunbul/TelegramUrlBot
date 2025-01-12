@@ -36,7 +36,7 @@ func (db *DataBase) GetBy(col string, data interface{}) (*mongo.SingleResult, er
 
 func (db *DataBase) GetList(col string, data interface{}) (*mongo.Cursor, error) {
 
-	result, err := db.Client.Collection(col).Find(context.TODO(), bson.D{{"$set", data}})
+	result, err := db.Client.Collection(col).Find(context.TODO(), data)
 	if err != nil {
 		return nil, err
 	}
