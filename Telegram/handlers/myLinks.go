@@ -19,12 +19,16 @@ func HandleMyLinks(bot *tgbotapi.BotAPI, message *tgbotapi.Message, db *Database
 
 	var urls []Models.Url
 	currentTime := time.Now()
+	telegramID := message.Chat.ID
 
 	if aktifmi {
 		filter := bson.D{
-			{Key: "$or", Value: bson.A{
-				bson.D{{Key: "endDate", Value: bson.D{{Key: "$exists", Value: false}}}},
-				bson.D{{Key: "endDate", Value: bson.D{{Key: "$gt", Value: currentTime}}}},
+			{Key: "$and", Value: bson.A{
+				bson.D{{Key: "userTelegramId", Value: telegramID}},
+				bson.D{{Key: "$or", Value: bson.A{
+					bson.D{{Key: "endDate", Value: bson.D{{Key: "$exists", Value: false}}}},
+					bson.D{{Key: "endDate", Value: bson.D{{Key: "$gt", Value: currentTime}}}},
+				}}},
 			}},
 		}
 
@@ -51,7 +55,10 @@ func HandleMyLinks(bot *tgbotapi.BotAPI, message *tgbotapi.Message, db *Database
 		}
 	} else {
 		filter := bson.D{
-			{Key: "endDate", Value: bson.D{{Key: "$lt", Value: currentTime}}},
+			{Key: "$and", Value: bson.A{
+				bson.D{{Key: "userTelegramId", Value: telegramID}},
+				bson.D{{Key: "endDate", Value: bson.D{{Key: "$lt", Value: currentTime}}}},
+			}},
 		}
 
 		data, err := db.GetList(Database.Url, filter)
@@ -78,7 +85,6 @@ func HandleMyLinks(bot *tgbotapi.BotAPI, message *tgbotapi.Message, db *Database
 	}
 
 	// Butonları oluştur
-
 	var keyboard [][]tgbotapi.InlineKeyboardButton
 	for _, u := range urls {
 		// Buton verisi olarak URL'nin ID'sini kullan
