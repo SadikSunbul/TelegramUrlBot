@@ -1,9 +1,10 @@
 package Telegram
 
 import (
+	"log"
+
 	"github.com/SadikSunbul/TelegramUrlBot/Database"
 	"github.com/SadikSunbul/TelegramUrlBot/Telegram/handlers"
-	"log"
 
 	"github.com/SadikSunbul/TelegramUrlBot/config"
 
@@ -33,7 +34,12 @@ func ConnectTelegram(db *Database.DataBase) {
 
 func handleUpdate(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database.DataBase) {
 
-	if update.Message == nil {
+	if update.Message == nil && update.CallbackQuery == nil {
+		return
+	}
+
+	if update.CallbackQuery != nil {
+		handleCallbackQuery(update, bot, db)
 		return
 	}
 
@@ -48,7 +54,6 @@ func handleUpdate(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database.Dat
 		handlers.HandleMyLinks(bot, update.Message, db, true)
 	case "/mylinkspassive":
 		handlers.HandleMyLinks(bot, update.Message, db, false)
-
 	default:
 		ProcessUserInput(update, bot, db) // Kullanıcıdan gelen mesajı işle
 	}

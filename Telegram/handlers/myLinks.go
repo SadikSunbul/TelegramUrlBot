@@ -78,9 +78,11 @@ func HandleMyLinks(bot *tgbotapi.BotAPI, message *tgbotapi.Message, db *Database
 	}
 
 	// Butonları oluştur
+
 	var keyboard [][]tgbotapi.InlineKeyboardButton
 	for _, u := range urls {
-		button := tgbotapi.NewInlineKeyboardButtonData(u.ShortUrl, u.ShortUrl)
+		// Buton verisi olarak URL'nin ID'sini kullan
+		button := tgbotapi.NewInlineKeyboardButtonData(u.ShortUrl, fmt.Sprintf("%s:%s", u.Id.Hex(), u.ShortUrl))
 		keyboard = append(keyboard, []tgbotapi.InlineKeyboardButton{button})
 	}
 
