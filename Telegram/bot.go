@@ -1,16 +1,15 @@
 package Telegram
 
 import (
+	"log"
+
 	"github.com/SadikSunbul/TelegramUrlBot/Database"
 	"github.com/SadikSunbul/TelegramUrlBot/Telegram/handlers"
-	"log"
 
 	"github.com/SadikSunbul/TelegramUrlBot/config"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
-
-var userData = make(map[int64]map[string]string)
 
 func ConnectTelegram(db *Database.DataBase) {
 	config := *config.GetConfig()
@@ -35,7 +34,12 @@ func ConnectTelegram(db *Database.DataBase) {
 
 func handleUpdate(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database.DataBase) {
 
-	if update.Message == nil {
+	if update.Message == nil && update.CallbackQuery == nil {
+		return
+	}
+
+	if update.CallbackQuery != nil {
+		handleCallbackQuery(update, bot, db)
 		return
 	}
 
@@ -43,7 +47,13 @@ func handleUpdate(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database.Dat
 	case "/help":
 		handlers.HandleHelp(bot, update.Message)
 	case "/start":
-		handlers.HandleStart(bot, update.Message, userData)
+		handlers.HandleStart(bot, update.Message, db)
+	case "/shortenurl":
+		handlers.HandleShortenUrl(bot, update.Message, db)
+	case "/mylinksactive":
+		handlers.HandleMyLinks(bot, update.Message, db, true)
+	case "/mylinkspassive":
+		handlers.HandleMyLinks(bot, update.Message, db, false)
 	default:
 		ProcessUserInput(update, bot, db) // Kullanıcıdan gelen mesajı işle
 	}
