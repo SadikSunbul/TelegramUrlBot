@@ -1,5 +1,5 @@
 # Telegram Bot Üzerinden URL Kısaltma ve Analiz Hizmeti
-
+[TelegramUrlBotServer](https://github.com/SadikSunbul/TelegramUrlBotServer) dan kısaltılmış url lere ulaşılabilir.
 ## Proje Özeti
 Bu projenin amacı, URL kısaltma hizmetleri sunan ve kısaltılmış linkler için detaylı analizler sağlayan bir Telegram botu geliştirmektir. Geleneksel web tabanlı URL kısaltma platformlarından farklı olarak, bu proje Telegram'ı birincil kullanıcı arayüzü olarak kullanmayı hedeflemektedir. Bu sayede işlemler mesajlaşma uygulaması içerisinde kolayca gerçekleştirilebilecektir.
 
