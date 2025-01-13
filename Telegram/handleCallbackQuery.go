@@ -1,15 +1,18 @@
 package Telegram
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
-	chart "github.com/SadikSunbul/TelegramUrlBot/Chart"
 	"github.com/SadikSunbul/TelegramUrlBot/Database"
 	"github.com/SadikSunbul/TelegramUrlBot/Models"
+	"github.com/SadikSunbul/TelegramUrlBot/Telegram/analysis"
 	"github.com/SadikSunbul/TelegramUrlBot/Telegram/handlers"
+	"github.com/go-echarts/go-echarts/v2/charts"
+	"github.com/go-echarts/go-echarts/v2/opts"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -129,13 +132,13 @@ func handleCallbackQuery(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Datab
 				// Kullanıcıya hangi verileri görmek istediğini sor
 				keyboard := [][]tgbotapi.InlineKeyboardButton{
 					{
-						tgbotapi.NewInlineKeyboardButtonData("Toplam Kaç kişi tıkladı?", fmt.Sprintf("clicks:%s:%s", urlId, shortUrl)),
+						tgbotapi.NewInlineKeyboardButtonData("Toplam Kaç kere tıkladı?", fmt.Sprintf("clicks:%s:%s", urlId, shortUrl)),
 					},
 					{
 						tgbotapi.NewInlineKeyboardButtonData("Hangi ülkelerden tıklandı?", fmt.Sprintf("countries:%s:%s", urlId, shortUrl)),
 					},
 					{
-						tgbotapi.NewInlineKeyboardButtonData("Ortalama tıklanma zamanları?", fmt.Sprintf("average_times:%s:%s", urlId, shortUrl)),
+						tgbotapi.NewInlineKeyboardButtonData("Tıklama Analizi?", fmt.Sprintf("average_times:%s:%s", urlId, shortUrl)),
 					},
 					{
 						tgbotapi.NewInlineKeyboardButtonData("Bu linkin uzun hali?", fmt.Sprintf("long_link:%s:%s", urlId, shortUrl)),
@@ -185,62 +188,119 @@ func handleCallbackQuery(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Datab
 
 func handleAction(action, urlId string, update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database.DataBase) {
 	switch action {
-	case "clicks":
-		err := CreateChart(update, bot, []string{"2025"}, []int{120}, "Kişi") // TODO : veriler değişicek
+	case "clicks": // ✅
+
+		datas, err := analysis.GetUrlInfo(db, urlId)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Veri tabanı hatası oluştu.")))
+			return
+		}
+		bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("👆🏻 %v defa bu url ye tıklandı.", len(datas))))
+		return
+
+	case "countries": // ✅
+
+		ulke, sayisi, err := analysis.CountriesAnalyse(db, urlId)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Veri tabanı hatası oluştu.")))
+			return
+		}
+
+		err = CreateChart(update, bot, ulke, sayisi, "Ülkeler") // TODO : veriler değişicek
 		if err != nil {
 			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Grafik oluşturulurken hata oluştu.")))
 			return
 		}
-	case "countries":
-		err := CreateChart(update, bot, []string{"Türkiye", "Almanya", "ABD", "Suriye"}, []int{120, 12, 78, 99}, "Ülkeler") // TODO : veriler değişicek
+	case "average_times": // ✅
+		// Tıklanma zamanalrı
+		saat, sayi, err := analysis.TimeAnalysis(db, urlId)
 		if err != nil {
-			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Grafik oluşturulurken hata oluştu.")))
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Veri tabanı hatası oluştu.")))
 			return
 		}
-	case "average_times":
-		err := CreateChart(update, bot, []string{"09:00", "20:11", "00:01"}, []int{120, 50, 20}, "Top 3 tıklanma zamanı") // TODO : veriler değişicek
-		if err != nil {
-			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Grafik oluşturulurken hata oluştu.")))
-			return
-		}
-	case "long_link":
-		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Bu URL'nin uzun hali: %s", getLongLink(urlId, db)))
+		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Tıklama Analizi, grafiğini hazırlıyorum...")
 		bot.Send(msg)
-	case "end_date":
-		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Bu URL bitiş zamanı: %s", getEndDate(urlId, db)))
+		err = CreateChart(update, bot, saat, sayi, "Tıklama Analizi") // TODO : veriler değişicek
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Grafik oluşturulurken hata oluştu.")))
+			return
+		}
+	case "long_link": // ❌
+
+		urldate, err := db.Get(Database.Url, urlId)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Veri tabanı hatası oluştu.")))
+			return
+		}
+		var urldecode Models.Url
+		err = urldate.Decode(&urldecode)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Decode hatası oluştu.")))
+			return
+		}
+		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Bu URL'nin uzun hali: %s", urldecode.OriginalUrl))
+		bot.Send(msg)
+	case "end_date": // ❌
+		urldate, err := db.Get(Database.Url, urlId)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Veri tabanı hatası oluştu.")))
+			return
+		}
+		var urldecode Models.Url
+		err = urldate.Decode(&urldecode)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Decode hatası oluştu.")))
+			return
+		}
+		if urldecode.EndDate == 0 {
+			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Bu URL bitiş zamanı: ∞ (sonsuz)")
+			bot.Send(msg)
+			return
+		}
+		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Bu URL bitiş zamanı: %s", urldecode.EndDate.Time().Format("2006-01-02 15:04")))
 		bot.Send(msg)
 	}
 }
 
-func getClicksCount(urlId string, db *Database.DataBase) int {
-	// TODO: Veritabanından tıklama sayısını al
-	return 0 // Şimdilik 0 döndür
+func generateBarItems(values []int) []opts.BarData {
+	items := make([]opts.BarData, len(values))
+	for i := 0; i < len(values); i++ {
+		items[i] = opts.BarData{Value: values[i]}
+	}
+	return items
 }
 
-func getCountries(urlId string, db *Database.DataBase) []string {
-	// TODO: Veritabanından ülke bilgilerini al
-	return []string{"Türkiye"} // Şimdilik sabit değer döndür
-}
+func CreateChartDik(xExsenData []string, yEksenData []int, title string) *bytes.Buffer {
+	if len(xExsenData) != len(yEksenData) {
+		// hatalı
+		return nil
+	}
 
-func getAverageClickTimes(urlId string, db *Database.DataBase) string {
-	// TODO: Veritabanından ortalama tıklanma zamanlarını al
-	return "Henüz veri yok" // Şimdilik sabit değer döndür
-}
+	bar := charts.NewBar()
+	bar.SetGlobalOptions(
+		charts.WithTitleOpts(opts.Title{Title: title}),
+		charts.WithLegendOpts(opts.Legend{Show: opts.Bool(true)}),
+		charts.WithXAxisOpts(opts.XAxis{
+			AxisLabel: &opts.AxisLabel{Rotate: 90},
+		}),
+	)
+	bar.SetXAxis(xExsenData).
+		AddSeries("Değerler", generateBarItems(yEksenData))
 
-func getLongLink(urlId string, db *Database.DataBase) string {
-	return "...x.com"
-}
-
-func getEndDate(urlId string, db *Database.DataBase) string {
-	return "sonsuz.."
+	buf := new(bytes.Buffer)
+	bar.Render(buf)
+	return buf
 }
 
 func CreateChart(update tgbotapi.Update, bot *tgbotapi.BotAPI, xExsenData []string, yEksenData []int, title string) error {
-	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf(title, "grafiğini hazırlıyorum..."))
+	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("%s grafiğini hazırlıyorum...", title))
 	bot.Send(msg)
 
 	// Grafiği oluştur
-	chartBuffer := chart.CreateChart(xExsenData, yEksenData, title)
+	chartBuffer := CreateChartDik(xExsenData, yEksenData, title)
+	if chartBuffer == nil {
+		return fmt.Errorf("grafik oluşturulamadı")
+	}
 
 	file := tgbotapi.FileBytes{
 		Name:  "chart.html",
