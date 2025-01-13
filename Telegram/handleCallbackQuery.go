@@ -225,7 +225,7 @@ func handleAction(action, urlId string, update tgbotapi.Update, bot *tgbotapi.Bo
 			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Grafik oluşturulurken hata oluştu.")))
 			return
 		}
-	case "long_link": // ❌
+	case "long_link": // ✅
 
 		urldate, err := db.Get(Database.Url, urlId)
 		if err != nil {
@@ -240,7 +240,7 @@ func handleAction(action, urlId string, update tgbotapi.Update, bot *tgbotapi.Bo
 		}
 		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Bu URL'nin uzun hali: %s", urldecode.OriginalUrl))
 		bot.Send(msg)
-	case "end_date": // ❌
+	case "end_date": // ✅
 		urldate, err := db.Get(Database.Url, urlId)
 		if err != nil {
 			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Veri tabanı hatası oluştu.")))

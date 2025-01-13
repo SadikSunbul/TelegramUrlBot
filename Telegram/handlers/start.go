@@ -41,5 +41,5 @@ func HandleStart(bot *tgbotapi.BotAPI, message *tgbotapi.Message, db *Database.D
 	}
 
 	// Kullanıcı zaten kayıtlı
-	bot.Send(tgbotapi.NewMessage(message.Chat.ID, NotificationTelegram(fmt.Sprintf("Hoşgeldin %s , daha fazla bilgi için ' \\help ' yaz !", user.Name))))
+	bot.Send(tgbotapi.NewMessage(message.Chat.ID, NotificationTelegram(fmt.Sprintf("Hoşgeldin %s , daha fazla bilgi için ' /help ' yaz !", user.Name))))
 }
