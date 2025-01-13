@@ -1,3 +1,5 @@
+[![Go Report Card](https://goreportcard.com/badge/github.com/SadikSunbul/TelegramUrlBot)](https://goreportcard.com/report/github.com/SadikSunbul/TelegramUrlBot)
+[![Version](https://img.shields.io/badge/Version-1.0-blue)]()
 # Telegram Bot Üzerinden URL Kısaltma ve Analiz Hizmeti
 [TelegramUrlBotServer](https://github.com/SadikSunbul/TelegramUrlBotServer) dan kısaltılmış url lere ulaşılabilir.
 ## Proje Özeti
