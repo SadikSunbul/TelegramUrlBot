@@ -1,8 +1,6 @@
 package Telegram
 
 import (
-	"fmt"
-
 	"go.mongodb.org/mongo-driver/bson"
 
 	"time"
@@ -41,7 +39,7 @@ func ProcessUserInput(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database
 					shortUrl = generateShortUrl() // Kısa URL oluşturma fonksiyonu
 					available, err := isShortUrlAvailable(db, shortUrl)
 					if err != nil {
-						bot.Send(tgbotapi.NewMessage(chatID, handlers.ErorrTelegram(fmt.Sprintf("Veri tabanı hatası oluştu. Lütfen daha sonra tekrar deneyin.:", err.Error()))))
+						bot.Send(tgbotapi.NewMessage(chatID, handlers.ErorrTelegram("Veri tabanı hatası oluştu. Lütfen daha sonra tekrar deneyin.")))
 						delete(handlers.UserData, chatID)
 						return
 					}
@@ -51,7 +49,7 @@ func ProcessUserInput(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database
 				}
 
 				handlers.UserData[chatID]["shortUrl"] = shortUrl
-				bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Kısa URL'niz: %s", shortUrl)))
+				bot.Send(tgbotapi.NewMessage(chatID, "Kısa URL'niz: "+shortUrl))
 				msg := tgbotapi.NewMessage(chatID, "Zamanlı mı yoksa zamansız mı olsun?")
 				keyboard := tgbotapi.NewInlineKeyboardMarkup(
 					tgbotapi.NewInlineKeyboardRow(
@@ -71,7 +69,7 @@ func ProcessUserInput(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database
 			shortUrl := update.Message.Text
 			available, err := isShortUrlAvailable(db, shortUrl)
 			if err != nil {
-				bot.Send(tgbotapi.NewMessage(chatID, handlers.ErorrTelegram(fmt.Sprintf("Veri tabanı hatası oluştu. Lütfen daha sonra tekrar deneyin.:", err.Error()))))
+				bot.Send(tgbotapi.NewMessage(chatID, handlers.ErorrTelegram("Veri tabanı hatası oluştu. Lütfen daha sonra tekrar deneyin.")))
 				return
 			}
 			if !available {
@@ -151,7 +149,6 @@ func isShortUrlAvailable(db *Database.DataBase, shortUrl string) (bool, error) {
 	}
 	var url Models.Url
 	data.Decode(&url)
-	fmt.Sprintf("data:", data)
 	return data == nil, nil // Eğer data nil ise, shortUrl kullanılabilir
 }
 func saveUrlToDatabase(data map[string]string, db *Database.DataBase, chanId int64) error {
