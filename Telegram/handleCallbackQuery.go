@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	chart "github.com/SadikSunbul/TelegramUrlBot/Chart"
 	"github.com/SadikSunbul/TelegramUrlBot/Database"
 	"github.com/SadikSunbul/TelegramUrlBot/Models"
 	"github.com/SadikSunbul/TelegramUrlBot/Telegram/handlers"
@@ -50,7 +51,7 @@ func handleCallbackQuery(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Datab
 					msg.ReplyMarkup = keyboard
 					bot.Send(msg)
 				} else {
-					bot.Send(tgbotapi.NewMessage(chatID, "Kısa URL'nizi giriniz (sadece şu kısmı girin xyz.com/'burayı'):"))
+					bot.Send(tgbotapi.NewMessage(chatID, "Kısa URL'nizi giriniz (Örnek: 'sadik' yazarsanız -> kısaurl.com/sadik şeklinde olacaktır):"))
 					handlers.UserData[chatID]["step"] = "get_custom_short_url"
 				}
 
@@ -185,17 +186,23 @@ func handleCallbackQuery(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Datab
 func handleAction(action, urlId string, update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database.DataBase) {
 	switch action {
 	case "clicks":
-		clicksCount := getClicksCount(urlId, db)
-		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Bu URL'ye toplam %d kişi tıkladı.", clicksCount))
-		bot.Send(msg)
+		err := CreateChart(update, bot, []string{"2025"}, []int{120}, "Kişi") // TODO : veriler değişicek
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Grafik oluşturulurken hata oluştu.")))
+			return
+		}
 	case "countries":
-		countries := getCountries(urlId, db)
-		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Bu URL'ye tıklayan ülkeler: %s", strings.Join(countries, ", ")))
-		bot.Send(msg)
+		err := CreateChart(update, bot, []string{"Türkiye", "Almanya", "ABD", "Suriye"}, []int{120, 12, 78, 99}, "Ülkeler") // TODO : veriler değişicek
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Grafik oluşturulurken hata oluştu.")))
+			return
+		}
 	case "average_times":
-		averageTimes := getAverageClickTimes(urlId, db)
-		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Bu URL için ortalama tıklanma zamanları: %s", averageTimes))
-		bot.Send(msg)
+		err := CreateChart(update, bot, []string{"09:00", "20:11", "00:01"}, []int{120, 50, 20}, "Top 3 tıklanma zamanı") // TODO : veriler değişicek
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Grafik oluşturulurken hata oluştu.")))
+			return
+		}
 	case "long_link":
 		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Bu URL'nin uzun hali: %s", getLongLink(urlId, db)))
 		bot.Send(msg)
@@ -226,4 +233,22 @@ func getLongLink(urlId string, db *Database.DataBase) string {
 
 func getEndDate(urlId string, db *Database.DataBase) string {
 	return "sonsuz.."
+}
+
+func CreateChart(update tgbotapi.Update, bot *tgbotapi.BotAPI, xExsenData []string, yEksenData []int, title string) error {
+	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf(title, "grafiğini hazırlıyorum..."))
+	bot.Send(msg)
+
+	// Grafiği oluştur
+	chartBuffer := chart.CreateChart(xExsenData, yEksenData, title)
+
+	file := tgbotapi.FileBytes{
+		Name:  "chart.html",
+		Bytes: chartBuffer.Bytes(),
+	}
+
+	doc := tgbotapi.NewDocumentUpload(update.CallbackQuery.Message.Chat.ID, file)
+	doc.Caption = "İşte grafiğiniz!"
+	_, err := bot.Send(doc)
+	return err
 }

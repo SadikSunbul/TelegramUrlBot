@@ -19,6 +19,7 @@ type Schema struct {
 	MongoDbConnect string `env:"mongoDbConnect"`
 	BootIdTelegram string `env:"bootIdTelegram"`
 	DbName         string `env:"dbName"`
+	ApiDomain      string `env :"apiDomain"`
 }
 
 var (
