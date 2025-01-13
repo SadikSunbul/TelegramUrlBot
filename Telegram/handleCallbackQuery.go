@@ -11,6 +11,7 @@ import (
 	"github.com/SadikSunbul/TelegramUrlBot/Models"
 	"github.com/SadikSunbul/TelegramUrlBot/Telegram/analysis"
 	"github.com/SadikSunbul/TelegramUrlBot/Telegram/handlers"
+	"github.com/SadikSunbul/TelegramUrlBot/config"
 	"github.com/go-echarts/go-echarts/v2/charts"
 	"github.com/go-echarts/go-echarts/v2/opts"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -82,7 +83,8 @@ func handleCallbackQuery(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Datab
 						bot.Send(tgbotapi.NewMessage(chatID, handlers.ErorrTelegram("Veri tabanı hatası oluştu.")))
 						return
 					}
-					bot.Send(tgbotapi.NewMessage(chatID, "Kısa URL başarıyla oluşturuldu ve sınırsız olarak kullanılabilir."))
+					cfg := config.GetConfig()
+					bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("%s%s URL başarıyla oluşturuldu ve sınırsız olarak kullanılabilir.", cfg.ApiDomain, handlers.UserData[chatID]["shortUrl"])))
 					delete(handlers.UserData, chatID)
 				}
 
@@ -100,7 +102,8 @@ func handleCallbackQuery(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Datab
 						bot.Send(tgbotapi.NewMessage(chatID, handlers.ErorrTelegram("Veri tabanı hatası oluştu.")))
 						return
 					}
-					bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("Kısa URL başarıyla oluşturuldu ve %d saat geçerli olacak.", hours)))
+					cfg := config.GetConfig()
+					bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("%s%s URL başarıyla oluşturuldu ve %d saat geçerli olacak.", cfg.ApiDomain, handlers.UserData[chatID]["shortUrl"], hours)))
 					delete(handlers.UserData, chatID)
 				}
 			default:
@@ -206,7 +209,7 @@ func handleAction(action, urlId string, update tgbotapi.Update, bot *tgbotapi.Bo
 			return
 		}
 
-		err = CreateChart(update, bot, ulke, sayisi, "Ülkeler") // TODO : veriler değişicek
+		err = CreateChart(update, bot, ulke, sayisi, "🇹🇷 Ülkeler")
 		if err != nil {
 			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Grafik oluşturulurken hata oluştu.")))
 			return
@@ -218,9 +221,7 @@ func handleAction(action, urlId string, update tgbotapi.Update, bot *tgbotapi.Bo
 			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Veri tabanı hatası oluştu.")))
 			return
 		}
-		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Tıklama Analizi, grafiğini hazırlıyorum...")
-		bot.Send(msg)
-		err = CreateChart(update, bot, saat, sayi, "Tıklama Analizi") // TODO : veriler değişicek
+		err = CreateChart(update, bot, saat, sayi, "📈 Tıklama Analizi")
 		if err != nil {
 			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Grafik oluşturulurken hata oluştu.")))
 			return
@@ -308,7 +309,7 @@ func CreateChart(update tgbotapi.Update, bot *tgbotapi.BotAPI, xExsenData []stri
 	}
 
 	doc := tgbotapi.NewDocumentUpload(update.CallbackQuery.Message.Chat.ID, file)
-	doc.Caption = "İşte grafiğiniz!"
+	doc.Caption = fmt.Sprintf("%s grafiğiniz", title)
 	_, err := bot.Send(doc)
 	return err
 }
