@@ -106,6 +106,36 @@ func handleCallbackQuery(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Datab
 					bot.Send(tgbotapi.NewMessage(chatID, fmt.Sprintf("%s%s URL başarıyla oluşturuldu ve %d saat geçerli olacak.", cfg.ApiDomain, handlers.UserData[chatID]["shortUrl"], hours)))
 					delete(handlers.UserData, chatID)
 				}
+
+			case "delete_confirm":
+				msg := tgbotapi.NewMessage(chatID, fmt.Sprintf("❗️ URL'yi silmek istediğinizden emin misiniz?"))
+				keyboard := tgbotapi.NewInlineKeyboardMarkup(
+					tgbotapi.NewInlineKeyboardRow(
+						tgbotapi.NewInlineKeyboardButtonData("✅ Evet, Sil", fmt.Sprintf("delete_url:%s", value)),
+						tgbotapi.NewInlineKeyboardButtonData("❌ Hayır, İptal", "delete_cancel:"),
+					),
+				)
+				msg.ReplyMarkup = keyboard
+				bot.Send(msg)
+
+			case "delete_url":
+				objID, err := primitive.ObjectIDFromHex(value)
+				if err != nil {
+					bot.Send(tgbotapi.NewMessage(chatID, handlers.ErorrTelegram("Geçersiz URL ID'si.")))
+					return
+				}
+
+				deleteTelegramId := int64(11111) // delete address
+
+				_, err = db.Update(Database.Url, objID.Hex(), bson.D{{"userTelegramId", deleteTelegramId}, {"endDate", primitive.NewDateTimeFromTime(time.Now())}})
+				if err != nil {
+					bot.Send(tgbotapi.NewMessage(chatID, handlers.ErorrTelegram("URL silinirken bir hata oluştu.")))
+					return
+				}
+				bot.Send(tgbotapi.NewMessage(chatID, "✅ URL başarıyla silindi."))
+
+			case "delete_cancel":
+				bot.Send(tgbotapi.NewMessage(chatID, "❌ URL silme işlemi iptal edildi."))
 			default:
 				// URL detayları için
 				urlId := parts[0]    // URL'nin ID'si
@@ -135,19 +165,28 @@ func handleCallbackQuery(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Datab
 				// Kullanıcıya hangi verileri görmek istediğini sor
 				keyboard := [][]tgbotapi.InlineKeyboardButton{
 					{
-						tgbotapi.NewInlineKeyboardButtonData("Toplam Kaç kere tıkladı?", fmt.Sprintf("clicks:%s:%s", urlId, shortUrl)),
+						tgbotapi.NewInlineKeyboardButtonData("📊 Toplam Kaç kere tıkladı?", fmt.Sprintf("clicks:%s:%s", urlId, shortUrl)),
 					},
 					{
-						tgbotapi.NewInlineKeyboardButtonData("Hangi ülkelerden tıklandı?", fmt.Sprintf("countries:%s:%s", urlId, shortUrl)),
+						tgbotapi.NewInlineKeyboardButtonData("🌍 Hangi ülkelerden tıklandı?", fmt.Sprintf("countries:%s:%s", urlId, shortUrl)),
 					},
 					{
-						tgbotapi.NewInlineKeyboardButtonData("Tıklama Analizi?", fmt.Sprintf("average_times:%s:%s", urlId, shortUrl)),
+						tgbotapi.NewInlineKeyboardButtonData("⏰ Tıklama Analizi?", fmt.Sprintf("average_times:%s:%s", urlId, shortUrl)),
 					},
 					{
-						tgbotapi.NewInlineKeyboardButtonData("Bu linkin uzun hali?", fmt.Sprintf("long_link:%s:%s", urlId, shortUrl)),
+						tgbotapi.NewInlineKeyboardButtonData("🔗 Bu linkin uzun hali?", fmt.Sprintf("long_link:%s:%s", urlId, shortUrl)),
 					},
 					{
-						tgbotapi.NewInlineKeyboardButtonData("Bu linkin bitiş zamanı?", fmt.Sprintf("end_date:%s:%s", urlId, shortUrl)),
+						tgbotapi.NewInlineKeyboardButtonData("⌛️ Bu linkin bitiş zamanı?", fmt.Sprintf("end_date:%s:%s", urlId, shortUrl)),
+					},
+					{
+						tgbotapi.NewInlineKeyboardButtonData("📱 Cihaz Analizi", fmt.Sprintf("devices:%s:%s", urlId, shortUrl)),
+					},
+					{
+						tgbotapi.NewInlineKeyboardButtonData("🌐 Tarayıcı Analizi", fmt.Sprintf("browsers:%s:%s", urlId, shortUrl)),
+					},
+					{
+						tgbotapi.NewInlineKeyboardButtonData("💻 İşletim Sistemi Analizi", fmt.Sprintf("os:%s:%s", urlId, shortUrl)),
 					},
 				}
 				replyMarkup := tgbotapi.NewInlineKeyboardMarkup(keyboard...)
@@ -239,7 +278,7 @@ func handleAction(action, urlId string, update tgbotapi.Update, bot *tgbotapi.Bo
 			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Decode hatası oluştu.")))
 			return
 		}
-		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Bu URL'nin uzun hali: %s", urldecode.OriginalUrl))
+		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("🔗 Bu URL'nin uzun hali: %s", urldecode.OriginalUrl))
 		bot.Send(msg)
 	case "end_date": // ✅
 		urldate, err := db.Get(Database.Url, urlId)
@@ -254,12 +293,47 @@ func handleAction(action, urlId string, update tgbotapi.Update, bot *tgbotapi.Bo
 			return
 		}
 		if urldecode.EndDate == 0 {
-			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "Bu URL bitiş zamanı: ∞ (sonsuz)")
+			msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, "⌛️ Bu URL bitiş zamanı: ∞ (sonsuz)")
 			bot.Send(msg)
 			return
 		}
 		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf("Bu URL bitiş zamanı: %s", urldecode.EndDate.Time().Format("2006-01-02 15:04")))
 		bot.Send(msg)
+	case "devices":
+		devices, counts, err := analysis.DeviceAnalysis(db, urlId)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Veri tabanı hatası oluştu.")))
+			return
+		}
+		err = CreateChart(update, bot, devices, counts, "📱 Cihaz Analizi")
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Grafik oluşturulurken hata oluştu.")))
+			return
+		}
+
+	case "browsers":
+		browsers, counts, err := analysis.BrowserAnalysis(db, urlId)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Veri tabanı hatası oluştu.")))
+			return
+		}
+		err = CreateChart(update, bot, browsers, counts, "🌐 Tarayıcı Analizi")
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Grafik oluşturulurken hata oluştu.")))
+			return
+		}
+
+	case "os":
+		systems, counts, err := analysis.OsAnalysis(db, urlId)
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Veri tabanı hatası oluştu.")))
+			return
+		}
+		err = CreateChart(update, bot, systems, counts, "💻 İşletim Sistemi Analizi")
+		if err != nil {
+			bot.Send(tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, handlers.ErorrTelegram("Grafik oluşturulurken hata oluştu.")))
+			return
+		}
 	}
 }
 
