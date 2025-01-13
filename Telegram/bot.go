@@ -54,6 +54,10 @@ func handleUpdate(update tgbotapi.Update, bot *tgbotapi.BotAPI, db *Database.Dat
 		handlers.HandleMyLinks(bot, update.Message, db, true)
 	case "/mylinkspassive":
 		handlers.HandleMyLinks(bot, update.Message, db, false)
+	case "/clear":
+		handlers.HandleClear(bot, update.Message, db)
+	case "/deleteurl":
+		handlers.HandleDeleteUrl(bot, update.Message, db)
 	default:
 		ProcessUserInput(update, bot, db) // Kullanıcıdan gelen mesajı işle
 	}
