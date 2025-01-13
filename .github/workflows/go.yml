@@ -1,5 +1,5 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+# Bu iş akışı, bir Golang projesini derleyecektir.
+# Daha fazla bilgi için: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
 
 name: Go
 
@@ -10,19 +10,31 @@ on:
     branches: [ "main" ]
 
 jobs:
-
   build:
     runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v4
+    
+    services:
+      mongodb:
+        image: mongo:latest
+        ports:
+          - 27017:27017
 
-    - name: Set up Go
+    steps:
+    - name: Kodları kontrol et
+      uses: actions/setup-go@v4
+
+    - name: Go'yu kur
       uses: actions/setup-go@v4
       with:
         go-version: '1.23.1'
 
-    - name: Build
+    - name: Bağımlılıkları yükle
+      run: go mod tidy
+
+    - name: Derle
       run: go build -v ./...
 
-    - name: Test
+    - name: Test et
       run: go test -v ./...
+      env:
+        MONGODB_URI: mongodb://localhost:27017
