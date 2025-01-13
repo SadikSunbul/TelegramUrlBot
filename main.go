@@ -8,6 +8,8 @@ import (
 
 func main() {
 	config.LoadConfig("config.yaml")
+
 	db := Database.ConnectionDatabase()
+
 	Telegram.ConnectTelegram(db)
 }
