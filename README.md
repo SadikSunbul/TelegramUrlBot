@@ -6,6 +6,19 @@
 ## Proje Özeti
 Bu projenin amacı, URL kısaltma hizmetleri sunan ve kısaltılmış linkler için detaylı analizler sağlayan bir Telegram botu geliştirmektir. Geleneksel web tabanlı URL kısaltma platformlarından farklı olarak, bu proje Telegram'ı birincil kullanıcı arayüzü olarak kullanmayı hedeflemektedir. Bu sayede işlemler mesajlaşma uygulaması içerisinde kolayca gerçekleştirilebilecektir.
 
+
+## Proje Resimleri
+<table>
+  <tr>
+    <td rowspan="2"><img src="image/1737732968190.jpeg" alt="Resim 1" width="300"/></td>
+    <td><img src="image/1737733215728.jpeg" alt="Resim 2" width="500"/></td>
+  </tr>
+  <tr>
+    <td><img src="image/1737733150916.jpeg" alt="Resim 3" width="500"/></td>
+  </tr>
+</table>
+
+
 ## Proje Amaçları
 - Telegram botu aracılığıyla uzun URL'lerin kısaltılması.
 - Kullanıcıların kısaltılan URL'ler için son kullanma tarihi belirleyebilmesi. Süresi dolan URL'ler orijinal linke yönlendirme yapmayacaktır.
